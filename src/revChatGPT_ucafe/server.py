@@ -70,14 +70,6 @@ class TCPServer:
     def handle(self,client_socket):
         asyncio.run(self.client_handler(client_socket))
 
-        # while True:
-        #     recv_data = self.reliable_recv(client_socket)
-        #     print(recv_data)
-        #     if recv_data.strip() == 'q':
-        #         break
-        #     send_data = input("#~ ")
-        #     self.reliable_send(client_socket,send_data)
-
     def run(self):
         while True:
             client_socket, client_address = self.server_socket.accept()

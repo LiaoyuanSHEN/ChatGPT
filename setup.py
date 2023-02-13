@@ -2,7 +2,7 @@ from setuptools import find_packages
 from setuptools import setup
 
 setup(
-    name="revChatGPT",
+    name="revChatGPT_ucafe",
     version="2.2.0",
     license="GNU General Public License v2.0",
     author="Antonio Cheong",
@@ -10,7 +10,7 @@ setup(
     description="ChatGPT is a reverse engineering of OpenAI's ChatGPT API",
     packages=find_packages("src"),
     package_dir={"": "src"},
-    py_modules=["Unofficial", "V2", "V1"],
+    py_modules=["Unofficial", "V2", "V1", "server", "client"],
     url="https://github.com/acheong08/ChatGPT",
     install_requires=[
         "asyncio",
