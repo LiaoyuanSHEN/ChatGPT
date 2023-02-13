@@ -10,9 +10,80 @@ import httpx
 import requests
 import tiktoken
 from OpenAIAuth.OpenAIAuth import OpenAIAuth
+import socket
+import threading
 
 ENCODER = tiktoken.get_encoding("gpt2")
 
+class TCPServer:
+    def __init__(self,port,args):
+        self.port = port
+        self.args = args
+        self.server_socket = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+        self.server_socket.bind(('', self.port))
+        self.server_socket.listen(5)
+        self.server_socket.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR, 1)
+        print("Waiting for connection")
+    
+
+    def reliable_send(self, client_socket, data):
+        json_data = json.dumps(data)
+        client_socket.send(json_data.encode('utf-8'))
+    
+    def reliable_recv(self,client_socket):
+        received_data = ""
+        while True:
+            try:
+                received_data = received_data + client_socket.recv(1024).decode('utf-8')
+                return json.loads(received_data)
+            except ValueError:
+                continue
+    
+
+    async def client_handler(self,client_socket):
+        print("Logging in...")
+        chatbot = Chatbot(
+            email=self.args.email,
+            password=self.args.password,
+            paid=self.args.paid,
+            proxy=self.args.proxy,
+            insecure=self.args.insecure_auth,
+            session_token=self.args.session_token,
+        )
+        print("Logged in\n")
+
+        while True:
+            print("You:")
+            prompt = self.reliable_recv(client_socket)
+            print(prompt)
+            print()
+            print("ChatGPT:")
+            result_str = ""
+            async for line in chatbot.ask(prompt=prompt):
+                result = line["choices"][0]["text"].replace("<|im_end|>", "")
+                print(result, end="")
+                sys.stdout.flush()
+                result_str = result_str + result
+            print()
+            self.reliable_send(client_socket, result_str)
+        
+    def handle(self,client_socket):
+        asyncio.run(self.client_handler(client_socket))
+
+        # while True:
+        #     recv_data = self.reliable_recv(client_socket)
+        #     print(recv_data)
+        #     if recv_data.strip() == 'q':
+        #         break
+        #     send_data = input("#~ ")
+        #     self.reliable_send(client_socket,send_data)
+
+    def run(self):
+        while True:
+            client_socket, client_address = self.server_socket.accept()
+            print("Connected from %s:%d" % (client_address[0], client_address[1]))
+            t = threading.Thread(target=self.handle, args=(client_socket,))
+            t.start()
 
 def get_max_tokens(prompt: str) -> int:
     """
@@ -247,8 +318,7 @@ def get_input(prompt):
     # Return the input
     return user_input
 
-
-async def main():
+if __name__ == "__main__":
     """
     Testing main function
     """
@@ -297,68 +367,5 @@ async def main():
     )
     args = parser.parse_args()
 
-    if (args.email is None or args.password is None) and args.session_token is None:
-        print("error: " + "Please provide your email and password")
-        return
-    print("Logging in...")
-    chatbot = Chatbot(
-        args.email,
-        args.password,
-        paid=args.paid,
-        proxy=args.proxy,
-        insecure=args.insecure_auth,
-        session_token=args.session_token,
-    )
-    print("Logged in\n")
-
-    print("Type '!help' to show a full list of commands")
-    print("Press enter twice to submit your question.\n")
-
-    def commands(command: str) -> bool:
-        if command == "!help":
-            print(
-                """
-            !help - Show this help message
-            !reset - Clear the current conversation
-            !rollback <int> - Remove the latest <int> messages from the conversation
-            !exit - Exit the program
-            """,
-            )
-        elif command == "!reset":
-            chatbot.conversations.remove("default")
-            print("Conversation cleared")
-        elif command.startswith("!rollback"):
-            try:
-                num = int(command.split(" ")[1])
-                chatbot.conversations.rollback("default", num)
-                print(f"Removed {num} messages from the conversation")
-            except IndexError:
-                print("Please specify the number of messages to remove")
-            except ValueError:
-                print("Please specify a valid number of messages to remove")
-        elif command == "!exit":
-            print("Exiting...")
-            sys.exit(0)
-        else:
-            return False
-        return True
-
-    try:
-        while True:
-            prompt = get_input("\nYou:\n")
-            if prompt.startswith("!"):
-                if commands(prompt):
-                    continue
-            print("ChatGPT:")
-            async for line in chatbot.ask(prompt=prompt):
-                result = line["choices"][0]["text"].replace("<|im_end|>", "")
-                print(result, end="")
-                sys.stdout.flush()
-            print()
-    except KeyboardInterrupt:
-        print("Exiting...")
-        sys.exit(0)
-
-
-if __name__ == "__main__":
-    asyncio.run(main())
+    tcp_server = TCPServer(5000, args)
+    tcp_server.run()
