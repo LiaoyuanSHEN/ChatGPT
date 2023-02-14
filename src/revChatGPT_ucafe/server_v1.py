@@ -85,18 +85,17 @@ class TCPServer:
                 print(prompt)
                 print()
                 print("ChatGPT:")
-                result_str = ""
+                prev_text = ""
                 for data in chatbot.ask(
                     prompt,
                     conversation_id=self.config.get("conversation"),
                     parent_id=self.config.get("parent_id"),
                 ):
-                    result = data["message"]
-                    print(data["message"], end="")
-                    sys.stdout.flush()
-                    result_str = result_str + result
-                print()
-                self.reliable_send(client_socket, result_str)
+                    result = data["message"][len(prev_text) :]
+                    print(result, end="", flush=True)
+                    prev_text = data["message"]
+                print("\n")
+                self.reliable_send(client_socket, prev_text)
         except Exception:
             print(traceback.format_exc())
             client_socket.shutdown(socket.SHUT_RDWR)
