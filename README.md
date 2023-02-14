@@ -24,6 +24,10 @@ Using cloudflare bypass server (no browser on server either). Check out the serv
 >  - *Unless you use `--insecure-auth`*. This is meant for users who are blocked from accessing OpenAI websites
 > - The server is open source: https://github.com/acheong08/ChatGPT-Proxy-V2 but with a `config.json` missing to avoid OpenAI detection.
 > - Rate limits: 180 requests per minute (IP based)
+> - I am running the server right now
+
+> ## IMPORTANT
+> You must either define `--paid` in command line or `paid=True` in code if you have a plus subscription. 
 
 ## Usage
 
@@ -46,7 +50,7 @@ options:
                         Your OpenAI password
   --paid                Use the paid API
   --proxy PROXY         Use a proxy
-  --insecure-auth       Use an insecure authentication method to bypass OpenAI's geo-blocking
+  --insecure-auth       (Deprecated)
   --session_token SESSION_TOKEN Alternative to email and password authentication. Use this if you have Google/Microsoft account.
 ```
 
@@ -56,13 +60,11 @@ Wiki: https://github.com/acheong08/ChatGPT/wiki/V2
 Example code:
 ```python
 from revChatGPT.V2 import Chatbot
-import sys
 
 async def main():
     chatbot = Chatbot(email="...", password="...")
     async for line in chatbot.ask("Hello"):
-        print(line["choices"][0]["text"].replace("<|im_end|>", ""), end="")
-        sys.stdout.flush()
+        print(line["choices"][0]["text"].replace("<|im_end|>", ""), end="", flush = True)
     print()
 
 if __name__ == "__main__":
@@ -71,6 +73,7 @@ if __name__ == "__main__":
 ```
 
 # V1 Standard ChatGPT
+> ## Under maintenance. Unavailable 
 
 ## Installation
 `pip3 install revChatGPT`
@@ -122,7 +125,6 @@ Optional configuration:
 Basic example:
 ```python
 from revChatGPT.V1 import Chatbot
-import sys
 
 chatbot = Chatbot(config={
   "email": "<your email>",
@@ -134,8 +136,7 @@ for data in chatbot.ask(
   conversation_id=chatbot.config.get("conversation"),
   parent_id=chatbot.config.get("parent_id"),
 ):
-  print(data["message"], end="")
-  sys.stdout.flush()
+  print(data["message"], end="", flush = True)
 print()
 ```
 

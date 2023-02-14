@@ -43,6 +43,18 @@ class TCPServer:
 
     async def client_handler(self,client_socket):
         try:
+            if self.args.connection_password != None:
+                print("Validating connection")
+                passwd = self.reliable_recv(client_socket)
+                if self.args.connection_password == passwd:
+                    print("Validated")
+                    self.reliable_send(client_socket, "OK")
+                else:
+                    print("Invalid")
+                    self.reliable_send(client_socket, "Failed")
+                    client_socket.shutdown(socket.SHUT_RDWR)
+                    return
+
             print("Logging in...")
             chatbot = Chatbot(
                 email=self.args.email,
@@ -233,8 +245,8 @@ class Chatbot:
                     print("error: " + "OpenAI error!")
                     raise Exception("OpenAI error!")
                 elif response.status_code != 200:
-                    print("error: " + "Unknown error")
-                    raise Exception("Unknown error")
+                    print("error: " + "Unknown error, code=" + str(response.status_code))
+                    raise Exception("Unknown error, code=" + str(response.status_code))
                 line = line.strip()
                 if line == "\n" or line == "":
                     continue
@@ -360,6 +372,11 @@ if __name__ == "__main__":
     parser.add_argument(
         "--session_token",
         help="Alternative to email and password authentication. Use this if you have Google/Microsoft account.",
+        required=False,
+    )
+    parser.add_argument(
+        "--connection_password",
+        help="TCP connection password",
         required=False,
     )
     args = parser.parse_args()
