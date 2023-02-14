@@ -1,4 +1,6 @@
 {
+  "email": "<your email>",
+  "password": "your password",
   "session_token": "<token>",
   "proxy":"<proxy>",
   "accept_language": "en-US,en"

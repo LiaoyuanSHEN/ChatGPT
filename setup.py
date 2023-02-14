@@ -18,6 +18,7 @@ setup(
         "OpenAIAuth==0.2.0",
         "tiktoken",
         "requests",
+        "revChatGPT",
     ],
     extras_require={
         "unofficial": [
