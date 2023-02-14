@@ -12,6 +12,7 @@ import tiktoken
 from OpenAIAuth.OpenAIAuth import OpenAIAuth
 import socket
 import threading
+import traceback
 
 ENCODER = tiktoken.get_encoding("gpt2")
 
@@ -41,31 +42,35 @@ class TCPServer:
     
 
     async def client_handler(self,client_socket):
-        print("Logging in...")
-        chatbot = Chatbot(
-            email=self.args.email,
-            password=self.args.password,
-            paid=self.args.paid,
-            proxy=self.args.proxy,
-            insecure=self.args.insecure_auth,
-            session_token=self.args.session_token,
-        )
-        print("Logged in\n")
+        try:
+            print("Logging in...")
+            chatbot = Chatbot(
+                email=self.args.email,
+                password=self.args.password,
+                paid=self.args.paid,
+                proxy=self.args.proxy,
+                insecure=self.args.insecure_auth,
+                session_token=self.args.session_token,
+            )
+            print("Logged in\n")
 
-        while True:
-            print("You:")
-            prompt = self.reliable_recv(client_socket)
-            print(prompt)
-            print()
-            print("ChatGPT:")
-            result_str = ""
-            async for line in chatbot.ask(prompt=prompt):
-                result = line["choices"][0]["text"].replace("<|im_end|>", "")
-                print(result, end="")
-                sys.stdout.flush()
-                result_str = result_str + result
-            print()
-            self.reliable_send(client_socket, result_str)
+            while True:
+                print("You:")
+                prompt = self.reliable_recv(client_socket)
+                print(prompt)
+                print()
+                print("ChatGPT:")
+                result_str = ""
+                async for line in chatbot.ask(prompt=prompt):
+                    result = line["choices"][0]["text"].replace("<|im_end|>", "")
+                    print(result, end="")
+                    sys.stdout.flush()
+                    result_str = result_str + result
+                print()
+                self.reliable_send(client_socket, result_str)
+        except Exception:
+            print(traceback.format_exc())
+            client_socket.shutdown(socket.SHUT_RDWR)
         
     def handle(self,client_socket):
         asyncio.run(self.client_handler(client_socket))
