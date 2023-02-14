@@ -6,12 +6,21 @@ import sys
 import optparse
 
 class UDPClient:
-    def __init__(self, target, port):
+    def __init__(self, target, port, connection_password=None):
         self.target = target
         self.port = port
         self.client_s = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
         print("Connecting to TCP server: %s %d" % (self.target, self.port))
         self.client_s.connect((self.target, self.port))
+        if connection_password != None:
+            self.reliable_send(connection_password)
+            resp = self.reliable_recv()
+            if resp == 'OK':
+                print("Connection valid")
+            else:
+                print("Connection invalid")
+                self.client_s.shutdown(socket.SHUT_RDWR)
+                raise Exception("Connection invalid")
 
     def reliable_send(self, data):
         json_data = json.dumps(data)
@@ -41,13 +50,14 @@ def get_params():
     parser = optparse.OptionParser('Usage: <Program> -t target -p port')
     parser.add_option('-t', '--target', dest='target', type="string", help="Specify IP address of target")
     parser.add_option('-p','--port', dest='port', type='int', help='Specify port')
+    parser.add_option('--connection_password', dest='connection_password', type='string', help='Connection password')
     options, args = parser.parse_args()
     if options.target is None or options.port is None:
         print(parser.usage)
         sys.exit(0)
-    return options.target, options.port
+    return options.target, options.port, options.connection_password
 
 if __name__ == "__main__":
-    target, port  = get_params()
-    udpclient = UDPClient(target, port)
+    target, port, connection_password = get_params()
+    udpclient = UDPClient(target, port, connection_password)
     udpclient.run()
