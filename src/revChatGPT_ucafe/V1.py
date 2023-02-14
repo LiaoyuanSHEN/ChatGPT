@@ -3,7 +3,6 @@ Standard ChatGPT
 """
 import json
 import logging
-import sys
 import uuid
 from os import environ
 from os import getenv
@@ -15,7 +14,7 @@ from OpenAIAuth.OpenAIAuth import OpenAIAuth
 # Disable all logging
 logging.basicConfig(level=logging.ERROR)
 
-BASE_URL = environ.get("CHATGPT_BASE_URL") or "https://chatgpt.duti.tech/"
+BASE_URL = environ.get("CHATGPT_BASE_URL") or "https://chat.duti.tech/"
 
 
 class Error(Exception):
@@ -124,7 +123,7 @@ class Chatbot:
             ],
             "conversation_id": conversation_id,
             "parent_message_id": parent_id or str(uuid.uuid4()),
-            "model": "text-davinci-002-render"
+            "model": "text-davinci-002-render-sha"
             if not self.config.get("paid")
             else "text-davinci-002-render-paid",
         }
@@ -134,15 +133,12 @@ class Chatbot:
         )  # for rollback
         self.parent_id_prev_queue.append(data["parent_message_id"])
         response = self.session.post(
-            url=BASE_URL + "backend-api/conversation",
+            url=BASE_URL + "api/conversation",
             data=json.dumps(data),
             timeout=360,
             stream=True,
         )
         self.__check_response(response)
-
-        compounded_resp = ""
-
         for line in response.iter_lines():
             line = str(line)[2:-1]
             if line == "" or line is None:
@@ -151,15 +147,21 @@ class Chatbot:
                 line = line[6:]
             if line == "[DONE]":
                 break
+
+            # Replace accidentally escaped double quotes
+            line = line.replace('\\"', '"')
+            line = line.replace("\\'", "'")
+            line = line.replace("\\\\", "\\")
             # Try parse JSON
             try:
                 line = json.loads(line)
             except json.decoder.JSONDecodeError:
                 continue
             if not self.__check_fields(line):
+                print("Field missing")
+                print(line)
                 continue
-            message = line["message"]["content"]["parts"][0][len(compounded_resp) :]
-            compounded_resp += message
+            message = line["message"]["content"]["parts"][0]
             conversation_id = line["conversation_id"]
             parent_id = line["message"]["id"]
             yield {
@@ -167,11 +169,10 @@ class Chatbot:
                 "conversation_id": conversation_id,
                 "parent_id": parent_id,
             }
-        # if gen_title and new_conv:
-        #     self.__gen_title(
-        #         self.conversation_id,
-        #         parent_id,
-        #     )
+        if parent_id is not None:
+            self.parent_id = parent_id
+        if conversation_id is not None:
+            self.conversation_id = conversation_id
 
     def __check_fields(self, data: dict) -> bool:
         try:
@@ -197,7 +198,7 @@ class Chatbot:
         :param offset: Integer
         :param limit: Integer
         """
-        url = BASE_URL + f"backend-api/conversations?offset={offset}&limit={limit}"
+        url = BASE_URL + f"api/conversations?offset={offset}&limit={limit}"
         response = self.session.get(url)
         self.__check_response(response)
         data = json.loads(response.text)
@@ -208,7 +209,7 @@ class Chatbot:
         Get message history
         :param id: UUID of conversation
         """
-        url = BASE_URL + f"backend-api/conversation/{convo_id}"
+        url = BASE_URL + f"api/conversation/{convo_id}"
         response = self.session.get(url)
         self.__check_response(response)
         data = json.loads(response.text)
@@ -218,7 +219,7 @@ class Chatbot:
     #     """
     #     Generate title for conversation
     #     """
-    #     url = BASE_URL + f"backend-api/conversation/gen_title/{convo_id}"
+    #     url = BASE_URL + f"api/conversation/gen_title/{convo_id}"
     #     response = self.session.post(
     #         url,
     #         data=json.dumps(
@@ -233,7 +234,7 @@ class Chatbot:
         :param id: UUID of conversation
         :param title: String
         """
-        url = BASE_URL + f"backend-api/conversation/{convo_id}"
+        url = BASE_URL + f"api/conversation/{convo_id}"
         response = self.session.patch(url, data=f'{{"title": "{title}"}}')
         self.__check_response(response)
 
@@ -242,7 +243,7 @@ class Chatbot:
         Delete conversation
         :param id: UUID of conversation
         """
-        url = BASE_URL + f"backend-api/conversation/{convo_id}"
+        url = BASE_URL + f"api/conversation/{convo_id}"
         response = self.session.patch(url, data='{"is_visible": false}')
         self.__check_response(response)
 
@@ -250,7 +251,7 @@ class Chatbot:
         """
         Delete all conversations
         """
-        url = BASE_URL + "backend-api/conversations"
+        url = BASE_URL + "api/conversations"
         response = self.session.patch(url, data='{"is_visible": false}')
         self.__check_response(response)
 
@@ -372,13 +373,15 @@ def main(config):
             elif prompt == "!exit":
                 break
         print("Chatbot: ")
+        prev_text = ""
         for data in chatbot.ask(
             prompt,
             conversation_id=chatbot.config.get("conversation"),
             parent_id=chatbot.config.get("parent_id"),
         ):
-            print(data["message"], end="")
-            sys.stdout.flush()
+            message = data["message"][len(prev_text) :]
+            print(message, end="", flush=True)
+            prev_text = data["message"]
         print()
         # print(message["message"])
 

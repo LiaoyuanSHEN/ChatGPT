@@ -5,16 +5,84 @@
 
 Reverse Engineered ChatGPT API by OpenAI. Extensible for chatbots etc.
 
-Connect with me on [Linkedin](https://www.linkedin.com/in/acheong08/) to support this project. (Not open for commercial opportunities yet. Too busy)
-<br><br>
-You can also follow me on [Twitter](https://twitter.com/GodlyIgnorance) to stay up to date.
-
-> ## [BingGPT](https://github.com/acheong08/BingGPT) is out! It's just like ChatGPT but with live internet access. Reverse engineered from the pre-release by Microsoft.
-> You need to be waitlisted by Microsoft/Bing
+> ## Support my work
+> You can support me by providing access to a Microsoft account with access to the New Bing. I reverse engineered it but account was suspended as a result. Check out my work: https://github.com/acheong08/EdgeGPT - (Do not use for now while I ensure it is safe.) You can slide into my Discord DMs at Churchless#2499
 
 Discord community: https://discord.gg/WMNtbDUjUv
 
+# V1 Standard ChatGPT
+> ## Update 2023/02/14 9:00 PM GMT+8: It is working. Use this.
+
+## Installation
+`pip3 install revChatGPT`
+
+## Configuration
+
+1. Create account on [OpenAI's ChatGPT](https://chat.openai.com/)
+2. Save your email and password
+
+Required configuration:
+
+```json
+{
+  "email": "<your email>",
+  "password": "your password",
+}
+```
+
+Optional configuration:
+
+```json
+{
+  "conversation_id": "UUID...",
+  "parent_id": "UUID...",
+  "proxy": "...",
+  "paid": false
+}
+```
+
+3. Save this as `$HOME/.config/revChatGPT/config.json`
+
+## Usage
+
+### Command line
+
+`python3 -m revChatGPT.V1`
+
+```
+!help - Show this message
+!reset - Forget the current conversation
+!config - Show the current configuration
+!rollback x - Rollback the conversation (x being the number of messages to rollback)
+!exit - Exit this program
+```
+
+### Developer
+
+Basic example:
+```python
+from revChatGPT.V1 import Chatbot
+
+chatbot = Chatbot(config={
+  "email": "<your email>",
+  "password": "your password"
+})
+
+for data in chatbot.ask(
+  prompt,
+  conversation_id=chatbot.config.get("conversation"),
+  parent_id=chatbot.config.get("parent_id"),
+):
+  print(data["message"], end="", flush = True)
+print()
+```
+
+Refer to [wiki](https://github.com/acheong08/ChatGPT/wiki/V1) for advanced developer usage
+
+
 # V2 Fast ChatGPT API
+
+> ## Under maintenance
 
 Using cloudflare bypass server (no browser on server either). Check out the server source code: https://github.com/acheong08/ChatGPT-Proxy-V2
 
@@ -27,7 +95,7 @@ Using cloudflare bypass server (no browser on server either). Check out the serv
 > - I am running the server right now
 
 > ## IMPORTANT
-> You must either define `--paid` in command line or `paid=True` in code if you have a plus subscription. 
+> You must either define `--paid` in command line or `paid=True` in code if you have a plus subscription.
 
 ## Usage
 
@@ -71,76 +139,6 @@ if __name__ == "__main__":
     import asyncio
     asyncio.run(main())
 ```
-
-# V1 Standard ChatGPT
-> ## Under maintenance. Unavailable 
-
-## Installation
-`pip3 install revChatGPT`
-
-## Configuration
-
-1. Create account on [OpenAI's ChatGPT](https://chat.openai.com/)
-2. Save your email and password
-
-Required configuration:
-
-```json
-{
-  "email": "<your email>",
-  "password": "your password",
-}
-```
-
-Optional configuration:
-
-```json
-{
-  "conversation_id": "UUID...",
-  "parent_id": "UUID...",
-  "proxy": "...",
-  "paid": false
-}
-```
-
-3. Save this as `$HOME/.config/revChatGPT/config.json`
-
-## Usage
-
-### Command line
-
-`python3 -m revChatGPT.V1`
-
-```
-!help - Show this message
-!reset - Forget the current conversation
-!refresh - Refresh the session authentication
-!config - Show the current configuration
-!rollback x - Rollback the conversation (x being the number of messages to rollback)
-!exit - Exit this program
-```
-
-### Developer
-
-Basic example:
-```python
-from revChatGPT.V1 import Chatbot
-
-chatbot = Chatbot(config={
-  "email": "<your email>",
-  "password": "your password"
-})
-
-for data in chatbot.ask(
-  prompt,
-  conversation_id=chatbot.config.get("conversation"),
-  parent_id=chatbot.config.get("parent_id"),
-):
-  print(data["message"], end="", flush = True)
-print()
-```
-
-Refer to [wiki](https://github.com/acheong08/ChatGPT/wiki/V1) for advanced developer usage
 
 
 # Awesome ChatGPT
