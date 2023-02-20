@@ -3,7 +3,7 @@ from setuptools import setup
 
 setup(
     name="revChatGPT_ucafe",
-    version="2.4.2",
+    version="2.4.3",
     license="GNU General Public License v2.0",
     author="Antonio Cheong",
     author_email="acheong@student.dalat.org",
@@ -13,10 +13,7 @@ setup(
     py_modules=["Unofficial", "V2", "V1", "server", "client"],
     url="https://github.com/acheong08/ChatGPT",
     install_requires=[
-        "asyncio",
-        "httpx[socks]",
-        "OpenAIAuth==0.2.0",
-        "tiktoken",
+        "OpenAIAuth==0.3.2",
         "requests",
         "revChatGPT",
     ],
