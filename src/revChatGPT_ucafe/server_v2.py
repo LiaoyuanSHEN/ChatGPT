@@ -75,9 +75,10 @@ class TCPServer:
                     result_str = result_str + result
                 print()
                 self.reliable_send(client_socket, result_str)
-        except Exception:
+        except Exception as e:
             print(traceback.format_exc())
             client_socket.shutdown(socket.SHUT_RDWR)
+            raise e
         
     def handle(self,client_socket):
         asyncio.run(self.client_handler(client_socket))

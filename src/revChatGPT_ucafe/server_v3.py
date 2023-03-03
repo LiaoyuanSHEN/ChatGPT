@@ -12,7 +12,7 @@ from os.path import exists
 import socket
 import threading
 import traceback
-from revChatGPT.V1 import Chatbot
+from revChatGPT.V3 import Chatbot
 
 def configure():
     """
@@ -76,7 +76,7 @@ class TCPServer:
                     return
 
             print("Logging in...")
-            chatbot = Chatbot(self.config)
+            chatbot = Chatbot(api_key=self.config.get("api_key"))
             print("Logged in\n")
 
             while True:
@@ -85,17 +85,9 @@ class TCPServer:
                 print(prompt)
                 print()
                 print("ChatGPT:")
-                prev_text = ""
-                for data in chatbot.ask(
-                    prompt,
-                    conversation_id=self.config.get("conversation"),
-                    parent_id=self.config.get("parent_id"),
-                ):
-                    result = data["message"][len(prev_text) :]
-                    print(result, end="", flush=True)
-                    prev_text = data["message"]
-                print("\n")
-                self.reliable_send(client_socket, prev_text)
+                res = chatbot.ask(prompt)
+                print(res + "\n")
+                self.reliable_send(client_socket, res)
         except Exception as e:
             print(traceback.format_exc())
             client_socket.shutdown(socket.SHUT_RDWR)
